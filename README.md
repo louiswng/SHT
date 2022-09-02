@@ -1,2 +1,2 @@
-# SAHT
-Code (PyTorch version) for SAHT model, KDD2022.
+# SHT
+Code (PyTorch version) for SHT model, KDD2022.

@@ -6,9 +6,9 @@ from Params import args
 xavierInit = nn.init.xavier_uniform_
 zeroInit = lambda x: nn.init.constant_(x, 0.0)
 
-class SAHT(nn.Module):
+class SHT(nn.Module):
     def __init__(self):
-        super(SAHT, self).__init__()
+        super(SHT, self).__init__()
         self.LightGCN = LightGCN()#.cuda()
         self.prepareKey = prepareKey()#.cuda()
         self.HypergraphTransormer1 = HypergraphTransormer()#.cuda()
