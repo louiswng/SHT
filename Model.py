@@ -117,8 +117,8 @@ class HypergraphTransormer(nn.Module):
 class HypergraphTransformerLayer(nn.Module):
     def __init__(self):
         super(HypergraphTransformerLayer, self).__init__()
-        self.linear1 = nn.Linear(args.hyperNum, args.hyperNum, bias=True)
-        self.linear2 = nn.Linear(args.hyperNum, args.hyperNum, bias=True)
+        self.linear1 = nn.Linear(args.hyperNum, args.hyperNum, bias=False)
+        self.linear2 = nn.Linear(args.hyperNum, args.hyperNum, bias=False)
         self.leakyrelu = nn.LeakyReLU(args.leaky)
 
     def forward(self, lats, key, value, hyper, V):
@@ -167,7 +167,7 @@ class LabelNetwork(nn.Module):
         iMapping = self.meta(iHyper)
         ulat = uMapping(usrKey)
         ilat = iMapping(itmKey)
-        lat = t.cat((ulat, ilat), dim=1)
+        lat = t.cat((ulat, ilat), dim=-1)
         lat = self.leakyrelu(self.linear1(lat)) + ulat + ilat
         ret = t.reshape(self.sigmoid(self.linear2(lat)), [-1])
         return ret
