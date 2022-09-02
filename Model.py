@@ -24,7 +24,7 @@ class SHT(nn.Module):
         self.ulat, self.uHyper = self.HypergraphTransormer1(self.uEmbeds0, self.uKey)
         self.ilat, self.iHyper = self.HypergraphTransormer2(self.iEmbeds0, self.iKey)
         
-    def train(self, uids, iids, edgeids, trnMat):
+    def train1(self, uids, iids, edgeids, trnMat):
         pckUlat = self.ulat[uids] # (batch, d)
         pckIlat = self.ilat[iids]
         preds = t.sum(pckUlat * pckIlat, dim=-1) # (batch, batch, d)

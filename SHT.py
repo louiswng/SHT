@@ -108,14 +108,15 @@ class Recommender:
         steps = int(np.ceil(num / args.batch))
         self.adj = self.handler.torchAdj
         self.tpAdj = self.handler.torchTpAdj
+        self.model.train()
         for i in range(steps):
             st = i * args.batch
             ed = min((i+1) * args.batch, num)
             batIds = sfIds[st: ed]
 
             uLocs, iLocs, edgeids = self.sampleTrainBatch(batIds, self.handler.trnMat)
-            self.model.forward(self.adj, self.tpAdj)
-            preds, sslLoss = self.model.train(uLocs, iLocs, edgeids, self.handler.trnMat)
+            self.model(self.adj, self.tpAdj)
+            preds, sslLoss = self.model.train1(uLocs, iLocs, edgeids, self.handler.trnMat)
             sampNum = len(uLocs) // 2
             posPred = preds[:sampNum]
             negPred = preds[sampNum:]
@@ -148,17 +149,19 @@ class Recommender:
         i = 0
         num = tstLoader.dataset.__len__()
         steps = num // args.batch
-        for usr, trnMask in tstLoader:
-            i += 1
-            usr = usr.long().to(self.device)
-            trnMask = trnMask.to(self.device)
+        self.model.eval()
+        with t.no_grad():
+            for usr, trnMask in tstLoader:
+                i += 1
+                usr = usr.long().to(self.device)
+                trnMask = trnMask.to(self.device)
 
-            topLocs = self.model.test(usr, trnMask)
+                topLocs = self.model.test(usr, trnMask)
 
-            recall, ndcg = self.calcRes(topLocs.cpu().numpy(), self.handler.tstLoader.dataset.tstLocs, usr)
-            epRecall += recall
-            epNdcg += ndcg
-            log('Steps %d/%d: recall = %.2f, ndcg = %.2f          ' % (i, steps, recall, ndcg), save=False, oneline=True)
+                recall, ndcg = self.calcRes(topLocs.cpu().numpy(), self.handler.tstLoader.dataset.tstLocs, usr)
+                epRecall += recall
+                epNdcg += ndcg
+                log('Steps %d/%d: recall = %.2f, ndcg = %.2f          ' % (i, steps, recall, ndcg), save=False, oneline=True)
         ret = dict()
         ret['Recall'] = epRecall / num
         ret['NDCG'] = epNdcg / num

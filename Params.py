@@ -14,7 +14,7 @@ def parse_args():
 	parser.add_argument('--sampNum', default=40, type=int, help='batch size for sampling')
 	parser.add_argument('--att_head', default=2, type=int, help='number of attention heads') # 微调
 	parser.add_argument('--gnn_layer', default=2, type=int, help='number of gnn layers')
-	parser.add_argument('--hyperNum', default=128, type=int, help='number of hyper edges')
+	parser.add_argument('--hyperNum', default=128, type=int, help='num ber of hyper edges')
 	parser.add_argument('--trnNum', default=10000, type=int, help='number of training instances per epoch')
 	parser.add_argument('--load_model', default=None, help='model name to load')
 	parser.add_argument('--shoot', default=20, type=int, help='K of top k')
