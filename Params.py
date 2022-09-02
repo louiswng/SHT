@@ -47,29 +47,4 @@ def parse_args():
 	parser.add_argument('--flag', default=1, type=int, help='a flag')
 	return parser.parse_args()
 args = parse_args()
-# tianchi
-# args.user = 423423
-# args.item = 874328
-# beibei
-# args.user = 21716
-# args.item = 7977
-# Tmall
-# args.user = 805506#147894
-# args.item = 584050#99037
-# amazon
-# args.user = 276163
-# args.item = 270761
-# ML10M_implicit
-# args.user = 69878
-# args.item = 10677
-# yelp_implicit
-# args.user = 29601
-# args.item = 24734
-
-# args.user = 78578
-# args.item = 77801
-
-
-# args.decay_step = args.trn_num
-# args.decay_step = args.item//args.batch
 args.decay_step = args.trnNum//args.batch

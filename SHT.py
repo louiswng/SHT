@@ -58,6 +58,7 @@ class Recommender:
                 # nni.report_intermediate_result(reses['Recall'])
                 log(self.makePrint('Test', ep, reses, tstFlag))
                 self.saveHistory()
+            self.sche.step()
             print()
         reses = self.testEpoch()
         # nni.report_final_result(reses['Recall'])
@@ -66,7 +67,8 @@ class Recommender:
 
     def prepareModel(self):
         self.model = SHT(self.device).to(self.device)
-        self.opt = t.optim.Adam(self.model.parameters(), lr=args.lr, weight_decay=0)
+        self.opt = t.optim.Adam(self.model.parameters(), lr=args.lr)
+        self.sche = t.optim.lr_scheduler.ExponentialLR(self.opt, gamma=args.decay)
 
     def sampleTrainBatch(self, batIds, labelMat):
         temLabel = labelMat[batIds].toarray()
@@ -205,7 +207,8 @@ class Recommender:
         
         with open('History/' + args.load_model + '.his', 'rb') as fs:
             self.metrics = pickle.load(fs)
-        self.opt = t.optim.Adam(self.model.parameters(), lr=args.lr, weight_decay=0)
+        self.opt = t.optim.Adam(self.model.parameters(), lr=args.lr)
+        self.sche = t.optim.lr_scheduler.ExponentialLR(self.opt, gamma=args.decay)
         log('Model Loaded')	
 
 if __name__ == '__main__':
