@@ -141,7 +141,7 @@ class Recommender:
         ret = dict()
         ret['Loss'] = epLoss / steps
         ret['preLoss'] = epPreLoss / steps
-        ret['lossLoss'] = epsslLoss / steps
+        ret['sslLoss'] = epsslLoss / steps
         return ret
 
     def testEpoch(self):
