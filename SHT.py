@@ -6,12 +6,16 @@ from Model import SHT
 from DataHandler import DataHandler, negSamp
 import numpy as np
 import pickle
-import nni
-from nni.utils import merge_parameter
+# import nni
+# from nni.utils import merge_parameter
+from torch.utils.tensorboard import SummaryWriter
+
+writer = SummaryWriter(log_dir='runs')
 
 class Recommender:
-    def __init__(self, handler):
+    def __init__(self, handler, device):
         self.handler = handler
+        self.device = device
         print('USER', args.user, 'ITEM', args.item)
         print('NUM OF INTERACTIONS', len(self.handler.trnMat.data))
         # print('NUM OF USER-USER EDGE', args.uuEdgeNum)
@@ -45,20 +49,23 @@ class Recommender:
         for ep in range(stloc, args.epoch):
             tstFlag = (ep % args.tstEpoch == 0)
             reses = self.trainEpoch()
+            writer.add_scalar('Loss/train', reses['Loss'], ep)
             log(self.makePrint('Train', ep, reses, tstFlag))
             if tstFlag:
                 reses = self.testEpoch()
-                nni.report_intermediate_result(reses['Recall'])
+                writer.add_scalar('Recall/test', reses['Recall'], ep)
+                writer.add_scalar('Ndcg/test', reses['NDCG'], ep)
+                # nni.report_intermediate_result(reses['Recall'])
                 log(self.makePrint('Test', ep, reses, tstFlag))
                 self.saveHistory()
             print()
         reses = self.testEpoch()
-        nni.report_final_result(reses['Recall'])
+        # nni.report_final_result(reses['Recall'])
         log(self.makePrint('Test', args.epoch, reses, True))
         self.saveHistory()
 
     def prepareModel(self):
-        self.model = SHT()#.cuda()
+        self.model = SHT(self.device).to(self.device)
         self.opt = t.optim.Adam(self.model.parameters(), lr=args.lr, weight_decay=0)
 
     def sampleTrainBatch(self, batIds, labelMat):
@@ -143,8 +150,8 @@ class Recommender:
         steps = num // args.batch
         for usr, trnMask in tstLoader:
             i += 1
-            usr = usr.long()#.cuda()
-            trnMask = trnMask#.cuda()
+            usr = usr.long().to(self.device)
+            trnMask = trnMask.to(self.device)
 
             topLocs = self.model.test(usr, trnMask)
 
@@ -200,17 +207,19 @@ class Recommender:
         log('Model Loaded')	
 
 if __name__ == '__main__':
-	logger.saveDefault = True
-	
+    logger.saveDefault = True
+    device = "cuda:1" if t.cuda.is_available() else "cpu"
+    print(f"Using {device} device")
+
     # get parameters form tuner
-	tuner_params = nni.get_next_parameter()
-	params = vars(merge_parameter(args, tuner_params))
-	print(params)
-
-	log('Start')
-	handler = DataHandler()
-	handler.LoadData()
-	log('Load Data')
-
-	recom = Recommender(handler)
-	recom.run()
+	# tuner_params = nni.get_next_parameter()
+	# params = vars(merge_parameter(args, tuner_params))
+	# print(params)
+    
+    log('Start')
+    handler = DataHandler(device)
+    handler.LoadData()
+    log('Load Data')
+    
+    recom = Recommender(handler, device)
+    recom.run()
