@@ -17,26 +17,25 @@ class SHT(nn.Module):
         self.HypergraphTransormer2 = HypergraphTransormer().to(self.device)
         self.label = LabelNetwork().to(self.device)
         
-    def forward(self, adj, tpAdj):
-        self.uEmbeds0, self.iEmbeds0 = self.LightGCN(adj, tpAdj) # (usr, d)
-        self.uKey = self.prepareKey1(self.uEmbeds0)
-        self.iKey = self.prepareKey2(self.iEmbeds0)
-        self.ulat, self.uHyper = self.HypergraphTransormer1(self.uEmbeds0, self.uKey)
-        self.ilat, self.iHyper = self.HypergraphTransormer2(self.iEmbeds0, self.iKey)
-        
-    def train1(self, uids, iids, edgeids, trnMat):
+    def forward(self, adj, tpAdj, uids, iids, edgeids, trnMat):
+        uEmbeds0, iEmbeds0 = self.LightGCN(adj, tpAdj) # (usr, d)
+        uKey = self.prepareKey1(uEmbeds0)
+        iKey = self.prepareKey2(iEmbeds0)
+        self.ulat, uHyper = self.HypergraphTransormer1(uEmbeds0, uKey)
+        self.ilat, iHyper = self.HypergraphTransormer2(iEmbeds0, iKey)
+
         pckUlat = self.ulat[uids] # (batch, d)
         pckIlat = self.ilat[iids]
         preds = t.sum(pckUlat * pckIlat, dim=-1) # (batch, batch, d)
 
         coo = trnMat.tocoo()
         usrs, itms = coo.row[edgeids], coo.col[edgeids]
-        self.uKey = t.reshape(t.permute(self.uKey, dims=[1, 0, 2]), [-1, args.latdim])
-        self.iKey = t.reshape(t.permute(self.iKey, dims=[1, 0, 2]), [-1, args.latdim])
-        usrKey = self.uKey[usrs]
-        itmKey = self.iKey[itms]
-        scores = self.label(usrKey, itmKey, self.uHyper, self.iHyper)
-        _preds = t.sum(self.uEmbeds0[usrs]*self.iEmbeds0[itms], dim=1)
+        uKey = t.reshape(t.permute(uKey, dims=[1, 0, 2]), [-1, args.latdim])
+        iKey = t.reshape(t.permute(iKey, dims=[1, 0, 2]), [-1, args.latdim])
+        usrKey = uKey[usrs]
+        itmKey = iKey[itms]
+        scores = self.label(usrKey, itmKey, uHyper, iHyper)
+        _preds = t.sum(uEmbeds0[usrs]*iEmbeds0[itms], dim=1)
 
         halfNum = scores.shape[0] // 2
         fstScores = scores[:halfNum]
@@ -44,6 +43,7 @@ class SHT(nn.Module):
         fstPreds = _preds[:halfNum]
         scdPreds = _preds[halfNum:]
         sslLoss = t.sum(t.maximum(t.tensor(0.0), 1.0 - (fstPreds - scdPreds) * args.mult * (fstScores-scdScores)))
+
         return preds, sslLoss
 
     def test(self, usr, trnMask):

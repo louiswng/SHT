@@ -115,8 +115,7 @@ class Recommender:
             batIds = sfIds[st: ed]
 
             uLocs, iLocs, edgeids = self.sampleTrainBatch(batIds, self.handler.trnMat)
-            self.model(self.adj, self.tpAdj)
-            preds, sslLoss = self.model.train1(uLocs, iLocs, edgeids, self.handler.trnMat)
+            preds, sslLoss = self.model(self.adj, self.tpAdj, uLocs, iLocs, edgeids, self.handler.trnMat)
             sampNum = len(uLocs) // 2
             posPred = preds[:sampNum]
             negPred = preds[sampNum:]
