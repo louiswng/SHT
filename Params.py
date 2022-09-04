@@ -24,6 +24,7 @@ def parse_args():
 	parser.add_argument('--gcn_hops', default=2, type=int, help='number of hops in gcn precessing')
 	parser.add_argument('--ssl_reg', default=1e-4, type=float, help='reg weight for ssl loss')
 	parser.add_argument('--edgeSampRate', default=0.1, type=float, help='Ratio of sampled edges')
+	parser.add_argument('--gpu', default='0', type=str, help='gpu indices')
 	return parser.parse_args()
 args = parse_args()
 args.decay_step = args.trnNum//args.batch

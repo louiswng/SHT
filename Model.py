@@ -7,15 +7,14 @@ xavierInit = nn.init.xavier_uniform_
 zeroInit = lambda x: nn.init.constant_(x, 0.0)
 
 class SHT(nn.Module):
-    def __init__(self, device):
+    def __init__(self):
         super(SHT, self).__init__()
-        self.device = device
-        self.LightGCN = LightGCN().to(self.device)
-        self.prepareKey1 = prepareKey().to(self.device)
-        self.prepareKey2 = prepareKey().to(self.device)
-        self.HypergraphTransormer1 = HypergraphTransormer().to(self.device)
-        self.HypergraphTransormer2 = HypergraphTransormer().to(self.device)
-        self.label = LabelNetwork().to(self.device)
+        self.LightGCN = LightGCN().cuda()
+        self.prepareKey1 = prepareKey().cuda()
+        self.prepareKey2 = prepareKey().cuda()
+        self.HypergraphTransormer1 = HypergraphTransormer().cuda()
+        self.HypergraphTransormer2 = HypergraphTransormer().cuda()
+        self.label = LabelNetwork().cuda()
         
     def forward(self, adj, tpAdj, uids, iids, edgeids, trnMat):
         uEmbeds0, iEmbeds0 = self.LightGCN(adj, tpAdj) # (usr, d)

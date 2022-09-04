@@ -9,13 +9,13 @@ import pickle
 # import nni
 # from nni.utils import merge_parameter
 from torch.utils.tensorboard import SummaryWriter
+import os
 
 writer = SummaryWriter(log_dir='runs')
 
 class Recommender:
-    def __init__(self, handler, device):
+    def __init__(self, handler):
         self.handler = handler
-        self.device = device
         print('USER', args.user, 'ITEM', args.item)
         print('NUM OF INTERACTIONS', len(self.handler.trnMat.data))
         # print('NUM OF USER-USER EDGE', args.uuEdgeNum)
@@ -66,7 +66,7 @@ class Recommender:
         self.saveHistory()
 
     def prepareModel(self):
-        self.model = SHT(self.device).to(self.device)
+        self.model = SHT().cuda()
         self.opt = t.optim.Adam(self.model.parameters(), lr=args.lr)
         self.sche = t.optim.lr_scheduler.ExponentialLR(self.opt, gamma=args.decay)
 
@@ -154,8 +154,8 @@ class Recommender:
         with t.no_grad():
             for usr, trnMask in tstLoader:
                 i += 1
-                usr = usr.long().to(self.device)
-                trnMask = trnMask.to(self.device)
+                usr = usr.long().cuda()
+                trnMask = trnMask.cuda()
 
                 topLocs = self.model.test(usr, trnMask)
 
@@ -213,18 +213,18 @@ class Recommender:
 
 if __name__ == '__main__':
     logger.saveDefault = True
-    device = "cuda:1" if t.cuda.is_available() else "cpu"
+    os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
+    device = "cuda" if t.cuda.is_available() else "cpu"
     print(f"Using {device} device")
-
     # get parameters form tuner
 	# tuner_params = nni.get_next_parameter()
 	# params = vars(merge_parameter(args, tuner_params))
 	# print(params)
     
     log('Start')
-    handler = DataHandler(device)
+    handler = DataHandler()
     handler.LoadData()
     log('Load Data')
     
-    recom = Recommender(handler, device)
+    recom = Recommender(handler)
     recom.run()

@@ -24,7 +24,7 @@ def transpose(mat):
 	return csr_matrix(coomat.transpose())
 
 class DataHandler:
-	def __init__(self, device):
+	def __init__(self):
 		if args.data == 'yelp':
 			predir = 'Data/yelp/'
 		elif args.data == 'tmall':
@@ -32,7 +32,6 @@ class DataHandler:
 		elif args.data == 'gowalla':
 			predir = 'Data/gowalla/'
 		self.predir = predir
-		self.device = device
 		self.trnfile = predir + 'trnMat_new.pkl'
 		self.tstfile = predir + 'tstMat_new.pkl'
 		self.uufile = predir + 'uuMat_new.pkl'
@@ -89,7 +88,7 @@ class DataHandler:
 		idxs = t.from_numpy(np.vstack([mat.row, mat.col]).astype(np.int64))
 		vals = t.from_numpy(mat.data.astype(np.float32))
 		shape = t.Size(mat.shape)
-		return t.sparse.FloatTensor(idxs, vals, shape).to(self.device)
+		return t.sparse.FloatTensor(idxs, vals, shape).cuda()
 
 	def LoadData(self):
 		trnMat = self.LoadOneFile(self.trnfile).tocsr()
@@ -100,8 +99,8 @@ class DataHandler:
 		idx = t.t(t.from_numpy(idx.astype(np.int64)))
 		data = t.from_numpy(data.astype(np.float32))
 		shape = t.Size(shape)
-		self.torchAdj = t.sparse.FloatTensor(idx, data, shape).to(self.device)
-		self.torchTpAdj = t.transpose(self.torchAdj, 0, 1).to(self.device)
+		self.torchAdj = t.sparse.FloatTensor(idx, data, shape).cuda()
+		self.torchTpAdj = t.transpose(self.torchAdj, 0, 1).cuda()
 		
 		self.trnMat = trnMat
 		args.edgeNum = len(self.trnMat.data)
