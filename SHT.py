@@ -46,6 +46,8 @@ class Recommender:
         else:
             stloc = 0
             log('Model Initialized')
+        
+        best_acc = 0.0
         for ep in range(stloc, args.epoch):
             tstFlag = (ep % args.tstEpoch == 0)
             reses = self.trainEpoch()
@@ -53,6 +55,15 @@ class Recommender:
             log(self.makePrint('Train', ep, reses, tstFlag))
             if tstFlag:
                 reses = self.testEpoch()
+                if reses['Recall'] > best_acc:
+                    best_acc = reses['Recall']
+                    best_acc2 = reses['NDCG']
+                    es = 0
+                else:
+                    es += 1
+                    if es >= args.patience:
+                        print("Early stopping with best Recall and NDCG is", best_acc, best_acc2)
+                        break
                 # writer.add_scalar('Recall/test', reses['Recall'], ep)
                 # writer.add_scalar('Ndcg/test', reses['NDCG'], ep)
                 # nni.report_intermediate_result(reses['Recall'])
@@ -60,9 +71,9 @@ class Recommender:
                 self.saveHistory()
             self.sche.step()
             print()
-        reses = self.testEpoch()
-        # nni.report_final_result(reses['Recall'])
-        log(self.makePrint('Test', args.epoch, reses, True))
+        # reses = self.testEpoch()
+        # nni.report_final_result(best_acc)
+        # log(self.makePrint('Test', args.epoch, reses, True))
         self.saveHistory()
 
     def prepareModel(self):
