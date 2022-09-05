@@ -1,16 +1,16 @@
+from Params import args
+import os
+os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
 import torch as t
 import Utils.TimeLogger as logger
 from Utils.TimeLogger import log
-from Params import args
 from Model import SHT
 from DataHandler import DataHandler, negSamp
 import numpy as np
 import pickle
-import nni
-from nni.utils import merge_parameter
+# import nni
+# from nni.utils import merge_parameter
 from torch.utils.tensorboard import SummaryWriter
-import os
-
 # writer = SummaryWriter(log_dir='runs')
 
 class Recommender:
@@ -55,13 +55,13 @@ class Recommender:
                 reses = self.testEpoch()
                 # writer.add_scalar('Recall/test', reses['Recall'], ep)
                 # writer.add_scalar('Ndcg/test', reses['NDCG'], ep)
-                nni.report_intermediate_result(reses['Recall'])
+                # nni.report_intermediate_result(reses['Recall'])
                 log(self.makePrint('Test', ep, reses, tstFlag))
                 self.saveHistory()
             self.sche.step()
             print()
         reses = self.testEpoch()
-        nni.report_final_result(reses['Recall'])
+        # nni.report_final_result(reses['Recall'])
         log(self.makePrint('Test', args.epoch, reses, True))
         self.saveHistory()
 
@@ -213,14 +213,13 @@ class Recommender:
 
 if __name__ == '__main__':
     logger.saveDefault = True
-    os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
     device = "cuda" if t.cuda.is_available() else "cpu"
     print(f"Using {device} device")
 
     # get parameters form tuner
-    tuner_params = nni.get_next_parameter()
-    params = vars(merge_parameter(args, tuner_params))
-    print(params)
+    # tuner_params = nni.get_next_parameter()
+    # params = vars(merge_parameter(args, tuner_params))
+    # print(params)
     
     log('Start')
     handler = DataHandler()
