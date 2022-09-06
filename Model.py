@@ -49,7 +49,7 @@ class SHT(nn.Module):
         pckUlat = self.ulat[usr]
         allPreds = pckUlat @ t.t(self.ilat)
         allPreds = allPreds * (1 - trnMask) - trnMask * 1e8
-        _, topLocs = t.topk(allPreds, args.shoot)
+        _, topLocs = t.topk(allPreds, args.topk)
         return topLocs
 
 
@@ -59,7 +59,7 @@ class LightGCN(nn.Module):
 
         self.uEmbeds = uEmbeds if uEmbeds is not None else nn.Parameter(xavierInit(t.empty(args.user, args.latdim)))
         self.iEmbeds = iEmbeds if iEmbeds is not None else nn.Parameter(xavierInit(t.empty(args.item, args.latdim)))
-        self.gnnLayers = nn.Sequential(*[GCNLayer() for i in range(args.gcn_hops)])
+        self.gnnLayers = nn.Sequential(*[GCNLayer() for i in range(args.gnn_layer)])
     
     def forward(self, adj, tpAdj):
         ulats = [self.uEmbeds]
@@ -101,7 +101,7 @@ class prepareValue(nn.Module):
 class HypergraphTransormer(nn.Module):
     def __init__(self):
         super(HypergraphTransormer, self).__init__()
-        self.hypergraphLayers = nn.Sequential(*[HypergraphTransformerLayer() for i in range(args.gnn_layer)])
+        self.hypergraphLayers = nn.Sequential(*[HypergraphTransformerLayer() for i in range(args.hgnn_layer)])
         self.Hyper = nn.Parameter(xavierInit(t.empty(args.hyperNum, args.latdim)))
         self.V = nn.Parameter(xavierInit(t.empty(args.latdim, args.latdim)))
         self.prepareValue = prepareValue()

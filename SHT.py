@@ -11,7 +11,7 @@ import pickle
 # import nni
 # from nni.utils import merge_parameter
 from torch.utils.tensorboard import SummaryWriter
-# writer = SummaryWriter(log_dir='runs')
+writer = SummaryWriter(log_dir='runs')
 
 class Recommender:
     def __init__(self, handler):
@@ -51,7 +51,7 @@ class Recommender:
         for ep in range(stloc, args.epoch):
             tstFlag = (ep % args.tstEpoch == 0)
             reses = self.trainEpoch()
-            # writer.add_scalar('Loss/train', reses['Loss'], ep)
+            writer.add_scalar('Loss/train', reses['Loss'], ep)
             log(self.makePrint('Train', ep, reses, tstFlag))
             if tstFlag:
                 reses = self.testEpoch()
@@ -64,8 +64,8 @@ class Recommender:
                     if es >= args.patience:
                         print("Early stopping with best Recall and NDCG is", best_acc, best_acc2)
                         break
-                # writer.add_scalar('Recall/test', reses['Recall'], ep)
-                # writer.add_scalar('Ndcg/test', reses['NDCG'], ep)
+                writer.add_scalar('Recall/test', reses['Recall'], ep)
+                writer.add_scalar('Ndcg/test', reses['NDCG'], ep)
                 # nni.report_intermediate_result(reses['Recall'])
                 log(self.makePrint('Test', ep, reses, tstFlag))
                 self.saveHistory()
@@ -188,7 +188,7 @@ class Recommender:
             temTopLocs = list(topLocs[i])
             temTstLocs = tstLocs[batIds[i]]
             tstNum = len(temTstLocs)
-            maxDcg = np.sum([np.reciprocal(np.log2(loc + 2)) for loc in range(min(tstNum, args.shoot))])
+            maxDcg = np.sum([np.reciprocal(np.log2(loc + 2)) for loc in range(min(tstNum, args.topk))])
             recall = dcg = 0
             for val in temTstLocs:
                 if val in temTopLocs:
