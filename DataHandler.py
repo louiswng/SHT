@@ -32,9 +32,8 @@ class DataHandler:
 		elif args.data == 'gowalla':
 			predir = 'Data/gowalla/'
 		self.predir = predir
-		self.trnfile = predir + 'trnMat_new.pkl'
-		self.tstfile = predir + 'tstMat_new.pkl'
-		self.uufile = predir + 'uuMat_new.pkl'
+		self.trnfile = predir + 'trnMat.pkl'
+		self.tstfile = predir + 'tstMat.pkl'
 
 	def LoadOneFile(self, filename):
 		with open(filename, 'rb') as fs:
