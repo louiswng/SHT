@@ -128,11 +128,8 @@ class Recommender:
             batIds = sfIds[st: ed]
 
             uLocs, iLocs, edgeids = self.sampleTrainBatch(batIds, self.handler.trnMat)
-            preds, sslLoss = self.model(self.adj, self.tpAdj, uLocs, iLocs, edgeids, self.handler.trnMat)
-            sampNum = len(uLocs) // 2
-            posPred = preds[:sampNum]
-            negPred = preds[sampNum:]
-            preLoss = t.sum(t.maximum(t.tensor(0.0), 1.0 - (posPred - negPred))) / args.batch
+            preLoss, sslLoss = self.model.calcLosses(self.adj, self.tpAdj, uLocs, iLocs, edgeids, self.handler.trnMat)
+
             regLoss = 0
             for W in self.model.parameters():
                 regLoss += W.norm(2).square()   
@@ -157,23 +154,23 @@ class Recommender:
 
     def testEpoch(self):
         tstLoader = self.handler.tstLoader
-        epRecall, epNdcg = [0] * 2
+        epLoss, epRecall, epNdcg = [0] * 3
         i = 0
         num = tstLoader.dataset.__len__()
-        steps = num // args.batch
-        self.model.eval()
-        with t.no_grad():
-            for usr, trnMask in tstLoader:
-                i += 1
-                usr = usr.long().cuda()
-                trnMask = trnMask.cuda()
-
-                topLocs = self.model.test(usr, trnMask)
-
-                recall, ndcg = self.calcRes(topLocs.cpu().numpy(), self.handler.tstLoader.dataset.tstLocs, usr)
-                epRecall += recall
-                epNdcg += ndcg
-                log('Steps %d/%d: recall = %.2f, ndcg = %.2f          ' % (i, steps, recall, ndcg), save=False, oneline=True)
+        steps = num // args.tstBat
+        for usr, trnMask in tstLoader:
+            i += 1
+            usr = usr.long().cuda()
+            trnMask = trnMask.cuda()
+            
+            allPreds = self.model.predAll(self.handler.torchAdj, self.handler.torchTpAdj, usr)
+            allPreds = allPreds * (1 - trnMask) - trnMask * 1e8
+            
+            _, topLocs = t.topk(allPreds, args.topk)
+            recall, ndcg = self.calcRes(topLocs.cpu().numpy(), self.handler.tstLoader.dataset.tstLocs, usr)
+            epRecall += recall
+            epNdcg += ndcg
+            log('Steps %d/%d: recall = %.2f, ndcg = %.2f          ' % (i, steps, recall, ndcg), save=False, oneline=True)    
         ret = dict()
         ret['Recall'] = epRecall / num
         ret['NDCG'] = epNdcg / num

@@ -16,16 +16,25 @@ class SHT(nn.Module):
         self.HypergraphTransormer2 = HypergraphTransormer().cuda()
         self.label = LabelNetwork().cuda()
         
-    def forward(self, adj, tpAdj, uids, iids, edgeids, trnMat):
+    def forward(self, adj, tpAdj):
         uEmbeds0, iEmbeds0 = self.LightGCN(adj, tpAdj) # (usr, d)
         uKey = self.prepareKey1(uEmbeds0)
         iKey = self.prepareKey2(iEmbeds0)
-        self.ulat, uHyper = self.HypergraphTransormer1(uEmbeds0, uKey)
-        self.ilat, iHyper = self.HypergraphTransormer2(iEmbeds0, iKey)
+        ulat, uHyper = self.HypergraphTransormer1(uEmbeds0, uKey)
+        ilat, iHyper = self.HypergraphTransormer2(iEmbeds0, iKey)
+        
+        return uEmbeds0, iEmbeds0, ulat, ilat, uKey, iKey, uHyper, iHyper
 
-        pckUlat = self.ulat[uids] # (batch, d)
-        pckIlat = self.ilat[iids]
+    def calcLosses(self, adj, tpAdj, uids, iids, edgeids, trnMat):
+        uEmbeds0, iEmbeds0, ulat, ilat, uKey, iKey, uHyper, iHyper = self.forward(adj, tpAdj) # local
+
+        pckUlat = ulat[uids] # (batch, d)
+        pckIlat = ilat[iids]
         preds = t.sum(pckUlat * pckIlat, dim=-1) # (batch, batch, d)
+        sampNum = len(uids) // 2
+        posPred = preds[:sampNum]
+        negPred = preds[sampNum:]
+        preLoss = t.sum(t.maximum(t.tensor(0.0), 1.0 - (posPred - negPred))) / args.batch
 
         coo = trnMat.tocoo()
         usrs, itms = coo.row[edgeids], coo.col[edgeids]
@@ -43,14 +52,14 @@ class SHT(nn.Module):
         scdPreds = _preds[halfNum:]
         sslLoss = t.sum(t.maximum(t.tensor(0.0), 1.0 - (fstPreds - scdPreds) * args.mult * (fstScores-scdScores)))
 
-        return preds, sslLoss
+        return preLoss, sslLoss
 
-    def test(self, usr, trnMask):
-        pckUlat = self.ulat[usr]
-        allPreds = pckUlat @ t.t(self.ilat)
-        allPreds = allPreds * (1 - trnMask) - trnMask * 1e8
-        _, topLocs = t.topk(allPreds, args.topk)
-        return topLocs
+    def predAll(self, adj, tpAdj, usr, itm=None):
+        _, _, uEmbeds, iEmbeds, _, _, _, _ = self.forward(adj, tpAdj) # global
+        uEmbed = uEmbeds[usr]
+        if itm is not None:
+            iEmbeds = iEmbeds[itm]
+        return t.mm(uEmbed, t.transpose(iEmbeds, 1, 0))
 
 
 class LightGCN(nn.Module):

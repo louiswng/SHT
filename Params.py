@@ -3,7 +3,7 @@ import argparse
 def parse_args():
 	parser = argparse.ArgumentParser(description='Model Params')
 	parser.add_argument('--lr', default=1e-3, type=float, help='learning rate')
-	parser.add_argument('--batch', default=4096, type=int, help='batch size')
+	parser.add_argument('--batch', default=256, type=int, help='batch size')
 	parser.add_argument('--tstBat', default=256, type=int, help='number of users in a testing batch')
 	parser.add_argument('--reg', default=3e-2, type=float, help='weight decay regularizer')
 	parser.add_argument('--epoch', default=100, type=int, help='number of epochs')
